@@ -1,22 +1,23 @@
 import { defineHook } from "@directus/extensions-sdk";
 
+const apiKeyToken =
+  "sk_978b150c6c2b3bfc7b95041230356448aebb984fef6678a6988e91f4dac5c2cc";
+
 export default defineHook(({ action }) => {
   // Handle item creation
   action("items.create", async (meta) => {
     if (meta.collection === "accessories") {
       const accessoryData = {
-        id: meta.key,
-        type_id: meta.payload.type,
-        thumbnail: meta.payload.main_image,
-        images:
-          meta.payload.additional_images?.create?.map(
-            (img: { directus_files_id: { id: number } }) =>
-              img.directus_files_id.id
-          ) || [],
+        handle: meta.key.toString(),
         title: meta.payload.heading,
         subtitle: meta.payload.sub_heading,
-        price: meta.payload.price,
-        options: meta.payload.options || [],
+        description: meta.payload.sub_heading,
+        options: [
+          {
+            title: "Variants",
+            values: meta.payload.options.map((each: any) => each.title),
+          },
+        ],
       };
 
       console.log(
@@ -26,9 +27,22 @@ export default defineHook(({ action }) => {
 
       // Here i would add my Medusa sync logic
       try {
-        // Example of how i might sync to Medusa:
-        // await syncToMedusa('create', accessoryData);
-        console.log("Ready to sync to Medusa:", accessoryData.id);
+        const res = await fetch(
+          "http://host.docker.internal:9000/admin/products",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Basic ${Buffer.from(`${apiKeyToken}:`).toString(
+                "base64"
+              )}`,
+            },
+            body: JSON.stringify(accessoryData),
+          }
+        );
+
+        const data = await res.json();
+        console.log(data);
       } catch (error) {
         console.error("Failed to sync to Medusa:", error);
       }

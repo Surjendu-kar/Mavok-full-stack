@@ -32,6 +32,8 @@ services:
     image: directus/directus:11.3.5
     ports:
       - 8055:8055
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./uploads:/directus/uploads
       - ./extensions:/directus/extensions

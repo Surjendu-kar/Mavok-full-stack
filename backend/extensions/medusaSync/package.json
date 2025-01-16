@@ -27,5 +27,10 @@
 		"@directus/extensions-sdk": "12.1.4",
 		"@types/node": "^22.10.6",
 		"typescript": "^5.7.3"
+	},
+	"dependencies": {
+		"@directus/sdk": "^19.0.0",
+		"@medusajs/medusa-js": "^6.1.9",
+		"axios": "^1.7.9"
 	}
 }
