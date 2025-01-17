@@ -26,7 +26,7 @@
   "include": [
     "**/*",
     ".medusa/types/*"
-  ],
+, "../test-server/server.js"  ],
   "exclude": [
     "node_modules",
     ".medusa/server",

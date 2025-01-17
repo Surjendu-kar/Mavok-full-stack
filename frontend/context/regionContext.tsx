@@ -1,4 +1,4 @@
-'use client'; // include with Next.js 13+
+'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { HttpTypes } from '@medusajs/types';

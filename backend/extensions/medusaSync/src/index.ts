@@ -2,48 +2,75 @@ import { defineHook } from "@directus/extensions-sdk";
 
 const apiKeyToken =
   "sk_978b150c6c2b3bfc7b95041230356448aebb984fef6678a6988e91f4dac5c2cc";
+const MEDUSA_BASE_URL = "http://host.docker.internal:9000/admin";
+
+// Helper function to create authorization header
+const getAuthHeader = () => ({
+  Authorization: `Basic ${Buffer.from(`${apiKeyToken}:`).toString("base64")}`,
+});
+
+// Helper function for making API calls to Medusa
+const medusaAPI = async (endpoint: string, options: RequestInit = {}) => {
+  const response = await fetch(`${MEDUSA_BASE_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      ...options.headers,
+      ...getAuthHeader(),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Medusa API call failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Helper function to get product by handle
+const getProductByHandle = async (handle: string) => {
+  const { products } = await medusaAPI(`/products?handle=${handle}`);
+
+  if (!products?.length) {
+    throw new Error(`No product found with handle ${handle}`);
+  }
+
+  return products[0];
+};
+
+// Helper function to format product data
+const formatProductData = (payload: any) => ({
+  title: payload.heading,
+  subtitle: payload.sub_heading,
+  description: payload.sub_heading,
+  options: [
+    {
+      title: "Variants",
+      values: payload.options?.map((each: any) => each.title) || [],
+    },
+  ],
+});
 
 export default defineHook(({ action }) => {
   // Handle item creation
   action("items.create", async (meta) => {
     if (meta.collection === "accessories") {
-      const accessoryData = {
-        handle: meta.key.toString(),
-        title: meta.payload.heading,
-        subtitle: meta.payload.sub_heading,
-        description: meta.payload.sub_heading,
-        options: [
-          {
-            title: "Variants",
-            values: meta.payload.options.map((each: any) => each.title),
-          },
-        ],
-      };
-
-      console.log(
-        "Prepared Accessory Data for Medusa:",
-        JSON.stringify(accessoryData, null, 2)
-      );
-
       try {
-        const res = await fetch(
-          "http://host.docker.internal:9000/admin/products",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Basic ${Buffer.from(`${apiKeyToken}:`).toString(
-                "base64"
-              )}`,
-            },
-            body: JSON.stringify(accessoryData),
-          }
-        );
+        const accessoryData = {
+          handle: meta.key.toString(),
+          ...formatProductData(meta.payload),
+        };
 
-        const data = await res.json();
-        console.log(data);
+        console.log("Preparing to create product:", accessoryData);
+
+        const data = await medusaAPI("/products", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(accessoryData),
+        });
+
+        console.log("Product created successfully:", data);
       } catch (error) {
-        console.error("Failed to sync to Medusa:", error);
+        console.error("Failed to create product in Medusa:", error);
       }
     }
   });
@@ -54,41 +81,11 @@ export default defineHook(({ action }) => {
       for (const id of meta.keys) {
         try {
           const handle = id.toString();
-          // First get the product ID from Medusa using handle
-          const productRes = await fetch(
-            `http://host.docker.internal:9000/admin/products?handle=${handle}`,
-            {
-              headers: {
-                Authorization: `Basic ${Buffer.from(`${apiKeyToken}:`).toString(
-                  "base64"
-                )}`,
-              },
-            }
-          );
+          const product = await getProductByHandle(handle);
 
-          const products = await productRes.json();
-          if (!products.products || !products.products.length) {
-            throw new Error(`No product found with handle ${handle}`);
-          }
-
-          const medusaProductId = products.products[0].id;
-
-          // Delete using Medusa product ID
-          const deleteRes = await fetch(
-            `http://host.docker.internal:9000/admin/products/${medusaProductId}`,
-            {
-              method: "DELETE",
-              headers: {
-                Authorization: `Basic ${Buffer.from(`${apiKeyToken}:`).toString(
-                  "base64"
-                )}`,
-              },
-            }
-          );
-
-          if (!deleteRes.ok) {
-            throw new Error(`Failed to delete product ${medusaProductId}`);
-          }
+          await medusaAPI(`/products/${product.id}`, {
+            method: "DELETE",
+          });
 
           console.log(`Successfully deleted product ${handle} from Medusa`);
         } catch (error) {
@@ -104,56 +101,14 @@ export default defineHook(({ action }) => {
       for (const id of meta.keys) {
         try {
           const handle = id.toString();
-          // Get Medusa product ID
-          const productRes = await fetch(
-            `http://host.docker.internal:9000/admin/products?handle=${handle}`,
-            {
-              headers: {
-                Authorization: `Basic ${Buffer.from(`${apiKeyToken}:`).toString(
-                  "base64"
-                )}`,
-              },
-            }
-          );
+          const product = await getProductByHandle(handle);
+          const updateData = formatProductData(meta.payload);
 
-          const products = await productRes.json();
-          if (!products.products?.length) {
-            throw new Error(`No product found with handle ${handle}`);
-          }
-
-          const medusaProductId = products.products[0].id;
-
-          // Update product in Medusa
-          const updateData = {
-            title: meta.payload.heading,
-            subtitle: meta.payload.sub_heading,
-            description: meta.payload.sub_heading,
-            options: [
-              {
-                title: "Variants",
-                values:
-                  meta.payload.options?.map((each: any) => each.title) || [],
-              },
-            ],
-          };
-
-          const updateRes = await fetch(
-            `http://host.docker.internal:9000/admin/products/${medusaProductId}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Basic ${Buffer.from(`${apiKeyToken}:`).toString(
-                  "base64"
-                )}`,
-              },
-              body: JSON.stringify(updateData),
-            }
-          );
-
-          if (!updateRes.ok) {
-            throw new Error(`Failed to update product ${medusaProductId}`);
-          }
+          await medusaAPI(`/products/${product.id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updateData),
+          });
 
           console.log(`Successfully updated product ${handle} in Medusa`);
         } catch (error) {
