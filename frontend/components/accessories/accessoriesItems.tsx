@@ -1,7 +1,7 @@
 'use client';
 
 import useCartStore from '@/store/cartStore';
-import { formatPrice } from '@/utils';
+import { formatPrice, getLowestPrice } from '@/utils';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FiMinus, FiPlus } from 'react-icons/fi';
@@ -17,7 +17,7 @@ export default function AccessoriesItems({ accessories }: Props) {
     addItem(accessory);
   };
 
-  const getItemQuantity = (id: number) => {
+  const getItemQuantity = (id: string) => {
     const item = items.find(item => item.id === id);
     return item?.quantity || 0;
   };
@@ -26,6 +26,7 @@ export default function AccessoriesItems({ accessories }: Props) {
     <div className="flex flex-wrap gap-5 items-center justify-center lg:justify-start">
       {accessories.map(accessory => {
         const quantity = getItemQuantity(accessory.id);
+        const lowestPrice = getLowestPrice(accessory);
 
         return (
           <div
@@ -50,10 +51,10 @@ export default function AccessoriesItems({ accessories }: Props) {
                 {accessory.sub_heading}
               </p>
               <p className="font-bold text-xs lg:text-sm uppercase">
-                From ${formatPrice(accessory.price)}.00
+                From ${formatPrice(lowestPrice)}.00
               </p>
             </Link>
-            
+
             {/* Add to Cart Button or Quantity Controls */}
             {quantity === 0 ? (
               <button

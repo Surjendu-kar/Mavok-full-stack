@@ -7,8 +7,8 @@ type AccessoriesWithQuantity = Accessories & { quantity: number };
 interface CartStore {
   items: AccessoriesWithQuantity[];
   addItem: (item: Accessories) => void;
-  removeItem: (id: number) => void;
-  decreaseQuantity: (id: number) => void;
+  removeItem: (id: string) => void;
+  decreaseQuantity: (id: string) => void;
   clearCart: () => void;
   total: () => number;
   totalQuantity: () => number;
@@ -24,14 +24,16 @@ const useCartStore = create<CartStore>((set, get) => ({
       const existingItem = state.items.find(i => i.id === item.id);
 
       if (existingItem) {
-        // If item exists, increment its quantity
+        // If item exists, increment its quantity and update price
         const updatedItems = state.items.map(i =>
-          i.id === item.id ? { ...i, quantity: (i.quantity || 1) + 1 } : i
+          i.id === item.id
+            ? { ...i, quantity: (i.quantity || 1) + 1, price: item.price }
+            : i
         );
         return { items: updatedItems };
       }
 
-      // If item is new, add it with quantity 1
+      // If item is new, add it with quantity 1 and the new price
       return { items: [...state.items, { ...item, quantity: 1 }] };
     });
 

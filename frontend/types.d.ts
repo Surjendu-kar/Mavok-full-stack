@@ -13,12 +13,20 @@ type AccessoriesType = {
 };
 
 type Accessories = {
-  id: number;
+  id: string;
   main_image: string;
   heading: string;
   sub_heading: string;
   price: number;
   type: number;
+  options: {
+    title: string;
+    price: string;
+  }[];
+  specifications: {
+    Type: string;
+    Value: string;
+  }[];
 };
 
 type AccessoriesFile = {

@@ -1,5 +1,16 @@
 import { defineHook } from "@directus/extensions-sdk";
 
+interface ProductOption {
+  title: string;
+  values: string[];
+}
+
+interface AccessoryPayload {
+  heading: string;
+  sub_heading: string;
+  options: ProductOption[];
+}
+
 const apiKeyToken =
   "sk_978b150c6c2b3bfc7b95041230356448aebb984fef6678a6988e91f4dac5c2cc";
 const MEDUSA_BASE_URL = "http://host.docker.internal:9000/admin";
@@ -38,14 +49,21 @@ const getProductByHandle = async (handle: string) => {
 };
 
 // Helper function to format product data
-const formatProductData = (payload: any) => ({
+const formatProductData = (
+  payload: AccessoryPayload
+): {
+  title: string;
+  subtitle: string;
+  description: string;
+  options: ProductOption[];
+} => ({
   title: payload.heading,
   subtitle: payload.sub_heading,
   description: payload.sub_heading,
   options: [
     {
       title: "Variants",
-      values: payload.options?.map((each: any) => each.title) || [],
+      values: payload.options?.map((each) => each.title) || [],
     },
   ],
 });

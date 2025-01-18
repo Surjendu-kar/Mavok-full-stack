@@ -3,6 +3,7 @@ import { useState } from 'react';
 import AccessoriesCategory from './accessoriesCategory';
 import AccessoriesHeader from './accessoriesHeader';
 import AccessoriesItems from './accessoriesItems';
+import { getLowestPrice } from '@/utils';
 
 type Props = {
   accessoriesType: AccessoriesType[];
@@ -20,11 +21,14 @@ export default function Accessories({ accessoriesType, accessories }: Props) {
 
   //  sorted accessories
   const sortedAccessories = [...filteredAccessories].sort((a, b) => {
+    const priceA = getLowestPrice(a);
+    const priceB = getLowestPrice(b);
+
     switch (sortBy) {
       case 'price_low_to_high':
-        return a.price - b.price;
+        return priceA - priceB;
       case 'price_high_to_low':
-        return b.price - a.price;
+        return priceB - priceA;
       default:
         return 0;
     }

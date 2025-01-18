@@ -1,8 +1,6 @@
-
 import { PaymentPartners } from '@/components/common/payment-partners';
 import directus from '@/directus/client';
 import { TableNames } from '@/enum';
-import { formatPrice } from '@/utils';
 import { readItem, readItems } from '@directus/sdk';
 import Link from 'next/link';
 import { IoIosArrowForward } from 'react-icons/io';
@@ -11,8 +9,9 @@ import { IoShieldCheckmarkOutline } from 'react-icons/io5';
 import { BiSupport } from 'react-icons/bi';
 import { PiCreditCardFill } from 'react-icons/pi';
 import ImageGallery from '@/components/product-details/image-gallery';
-import VariantsSelector from '@/components/product-details/variants-selector';
-import AddToCart from '@/components/product-details/add-to-cart';
+import PriceSection from '@/components/product-details/price-section';
+import ProductSpecifications from '@/components/product-details/product-specifications';
+import SpecificationHeader from '@/components/product-details/specification-header';
 
 type Props = {
   params: Promise<{
@@ -36,6 +35,8 @@ async function Page({ params }: Props) {
     readItem(TableNames.ACCESSORIES, cat_id)
   );
 
+  console.log(category);
+
   const accessories_file = await directus.request<AccessoriesFile[]>(
     readItems('accessories_files')
   );
@@ -54,10 +55,15 @@ async function Page({ params }: Props) {
     {}
   );
 
+  const formattedSpecs = category?.specifications?.map(spec => ({
+    type: spec.Type,
+    value: spec.Value,
+  }));
+
   return (
-    <div className="mt-16 flex flex-col px-5 lg:px-24 py-10  gap-5">
+    <div className="mt-16 flex flex-col px-5 lg:px-24 py-10 gap-5">
       {/* breadcrumb */}
-      <div className="flex flex-wrap items-center font-bold ">
+      <div className="flex flex-wrap items-center font-bold justify-center lg:justify-start">
         <Link
           href="/category/accessories"
           className="text-primary-light/50 hover:text-primary-light transition-colors capitalize "
@@ -70,12 +76,12 @@ async function Page({ params }: Props) {
         <p className="text-primary uppercase">{category.heading}</p>
       </div>
 
-      <div className="flex flex-col lg:flex-row justify-between gap-10 lg:gap-3">
+      <div className="flex flex-col lg:flex-row justify-between gap-10 lg:gap-3 items-center lg:items-start">
         {/* left side */}
         <ImageGallery category={category} multipleImages={multipleImages} />
 
         {/* right side */}
-        <div className="flex flex-col justify-between gap-2 lg:gap-1">
+        <div className="flex flex-col justify-between gap-3 lg:gap-5">
           <div className="flex flex-col gap-1">
             {/* type */}
             <p className="text-primary-main font-bold uppercase text-sm lg:text-base">
@@ -91,64 +97,52 @@ async function Page({ params }: Props) {
             </p>
           </div>
 
-          <VariantsSelector productId={cat_id} />
-
-          <div className="flex flex-col justify-center gap-2 lg:gap-4 bg-primary-lighter w-[350px] lg:w-[500px]  rounded-md p-3 lg:p-5">
-            {/* price */}
-            <p className="text-xl lg:text-3xl font-bold uppercase">
-              ${formatPrice(category.price)} AUD
-            </p>
-
-            {/* offer */}
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <p className="line-through text-primary-light text-sm lg:text-base">
-                  ${formatPrice(category.price)} AUD
-                </p>
-                <p className="text-secondary-main font-bold text-sm lg:text-base">
-                  Save 25% or $111
-                </p>
-              </div>
-
-              <p className="text-primary-light text-sm lg:text-base">
-                or $27.75/month with 36-month financing*, before trade-in
-              </p>
+          <PriceSection productId={cat_id} product={category} />
+        </div>
+      </div>
+      <div className="lg:relative lg:top-0 lg:self-end">
+        <div className="flex flex-col w-full lg:w-[500px]">
+          {/* Estimated dispatch with 2-days Free Shipping */}
+          <div className="flex items-center gap-3 border-b py-1 lg:py-2  text-sm lg:text-base">
+            <TbTruckDelivery className="text-2xl text-primary-light" />
+            <span className="text-primary-light">
+              Estimated dispatch with 2-days Free Shipping
+            </span>
+          </div>
+          {/* Return Policy */}
+          <div className="flex items-center justify-between border-b py-1 lg:py-2 text-sm lg:text-base">
+            <div className="flex items-center gap-3">
+              <IoShieldCheckmarkOutline className="text-2xl text-primary-light" />
+              <span className="text-primary-light">15-days return policy</span>
             </div>
-
-            <AddToCart product={category} />
+            <IoIosArrowForward className="text-primary-light" />
           </div>
+          {/* Global Support */}
+          <div className="flex items-center gap-3 border-b py-1 lg:py-2 text-sm lg:text-base">
+            <BiSupport className="text-2xl text-primary-light" />
+            <span className="text-primary-light">Global support</span>
+          </div>
+          {/* Ways to pay */}
+          <div className="flex items-center gap-3 pt-1 lg:pt-2 pb-4 text-sm lg:text-base">
+            <PiCreditCardFill className="text-2xl text-primary-light" />
+            <span className="text-primary-light">Ways to pay</span>
+          </div>
+          {/* payment partners */}
+          <PaymentPartners />
         </div>
       </div>
 
-      <div className="flex flex-col">
-        {/* Estimated dispatch with 2-days Free Shipping */}
-        <div className="flex items-center gap-3 border-b py-1 lg:py-2  text-sm lg:text-base">
-          <TbTruckDelivery className="text-2xl text-primary-light" />
-          <span className="text-primary-light">
-            Estimated dispatch with 2-days Free Shipping
-          </span>
+      {/* specifications */}
+      {formattedSpecs && (
+        <div className="flex flex-col gap-5 mt-10 lg:mt-10">
+          <SpecificationHeader
+            main="Specifications"
+            heading="Lorem ipsum title."
+            desc="Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos."
+          />
+          <ProductSpecifications specData={formattedSpecs} />
         </div>
-        {/* Return Policy */}
-        <div className="flex items-center justify-between border-b py-1 lg:py-2 text-sm lg:text-base">
-          <div className="flex items-center gap-3">
-            <IoShieldCheckmarkOutline className="text-2xl text-primary-light" />
-            <span className="text-primary-light">15-days return policy</span>
-          </div>
-          <IoIosArrowForward className="text-primary-light" />
-        </div>
-        {/* Global Support */}
-        <div className="flex items-center gap-3 border-b py-1 lg:py-2 text-sm lg:text-base">
-          <BiSupport className="text-2xl text-primary-light" />
-          <span className="text-primary-light">Global support</span>
-        </div>
-        {/* Ways to pay */}
-        <div className="flex items-center gap-3 pt-1 lg:pt-2 pb-4 text-sm lg:text-base">
-          <PiCreditCardFill className="text-2xl text-primary-light" />
-          <span className="text-primary-light">Ways to pay</span>
-        </div>
-        {/* payment partners */}
-        <PaymentPartners />
-      </div>
+      )}
     </div>
   );
 }
